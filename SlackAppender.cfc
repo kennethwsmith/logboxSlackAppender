@@ -15,81 +15,149 @@ component extends="coldbox.system.logging.AbstractAppender" output="false" hint=
 		if( NOT propertyExists("postAsUser") ){
 			setProperty("postAsUser",true);
 		}
-		if( NOT propertyExists("threadPost") ){
-			setProperty("threadPost",true);
+		if( NOT propertyExists("useThread") ){
+			setProperty("useThread",true);
+		}
+		if( NOT propertyExists("useSeverity") ){
+			setProperty("useSeverity",true);
 		}
 		return this;
 	}
 
 	public void function logMessage(required any logEvent) hint="Write an entry into the logger."{
 
-		if (!getProperty('threadPost')) {
-			postMessage( channel=getProperty('channel'), messageText=arguments.logEvent.getMessage() );
+		var args = overrideProperties(arguments.logEvent);
+		if (args.useSeverity) {
+			args.messageText = buildSeverityMessage(arguments.logEvent.getSeverity()) & arguments.logEvent.getMessage();
 		}
 		else {
-			thread name=reReplace(createUUID(),'\W','','all') loge=arguments.logEvent channel=getProperty("channel") {
-				try {
-					postMessage( channel=channel, messageText=loge.getMessage() );
-				}
-				catch(any e) {
-					$log("ERROR","Error sending message from appender #getName()#. #e.message# #e.detail# #e.stacktrace#");
-				}
-			};
+			args.messageText = arguments.logEvent.getMessage();
 		}
-
-	}
-
-	private string function getSeverity(required numeric severity){
-		switch(arguments.severity){
-			case 0:
-				var eventType = "FATAL";
-				break;
-			case 1:
-				var eventType = "ERROR";
-				break;
-			case 2:
-				var eventType = "WARN";
-				break;
-			case 3:
-				var eventType = "INFO";
-				break;
-			default:
-				var eventType = "DEBUG";
+		args.attachments = getAttachments(arguments.logEvent,args.useSeverity);
+		try {
+			if (!args.useThread) {
+				var reply = postMessage( argumentCollection=args );
+			}
+			else {
+				thread name="logSlackMessage#getTickCount()#" args=args {
+					var reply = postMessage( argumentCollection=args );
+				}	
+			}
 		}
-
-		return eventType;
+		catch(any e) {
+			$log("ERROR","Error sending message from appender #getName()#. #e.message# #e.detail# #e.stacktrace#");
+		}
 	}
 
-	private string function buildMessage(required string channel, required string action, boolean as_user = true, required string messageText){
-
-		var buffer="";
-		buffer = buffer & getProperty("appURI");
-		buffer = buffer & arguments.action;
-		buffer = buffer & "?channel=#arguments.channel#";
-		buffer = buffer & "&as_user=#arguments.as_user.toString()#";
-		buffer = buffer & "&text=#arguments.messageText#";
-		buffer = buffer & "&token=#getProperty('userToken')#";
-		return buffer;
-	}
-
-	private any function postMessage(required string channel, required string messageText) {
-
+	private any function postMessage(required array attachments, required string userToken, required string appURI, required string channel, required boolean postAsUser, required string messageText) {
 		arguments.action = "chat.postMessage";
-		arguments.as_user = getProperty("postAsUser");
-		var appURL = buildMessage(argumentCollection=arguments);
-
-		return sendRequest(appURL);	
+		return sendRequest(argumentCollection=arguments);	
 	}
 
-	private any function sendRequest(required string appURL) {
+	private any function sendRequest(required string action, required array attachments, required string userToken, required string appURI, required string channel, required boolean postAsUser, required string messageText) {
 
 		var httpService = new http();
-			httpService.setURL(arguments.appURL);
-			httpService.setMethod("GET");
+			httpService.setURL(arguments.appURI&arguments.action);
+			httpService.setMethod("POST");
 			httpService.setTimeout(5);
 			httpService.setUserAgent("LogBox Slack Appender");
+			httpService.addParam(type="formfield",name="channel",value=arguments.channel);
+			httpService.addParam(type="formfield",name="as_user",value=arguments.postAsUser);
+			httpService.addParam(type="formfield",name="text",value=arguments.messageText);
+			httpService.addParam(type="formfield",name="token",value=arguments.userToken);
+			if ( structKeyExists(arguments,"attachments") )
+				httpService.addParam(type="formfield",name="attachments",value=serializeJSON(arguments.attachments));
+			
+		var reply = httpService.send().getPrefix();
 
-		return httpService.send().getPrefix();
+		return reply;
+	}
+
+	private string function buildSeverityMessage(required numeric severity) {
+		var oSev = decodeSeverity(arguments.severity);
+		return "#oSev.emoji# *#oSev.severityText#*: ";
+	}
+
+	private array function getAttachments(required any logEvent, required boolean useSeverity) {
+		var extraInfo = arguments.logEvent.getExtraInfo();
+		if (isStruct(extraInfo) && structKeyExists(extraInfo,"attachments")) {
+			if (arguments.useSeverity) {
+				return replaceColors(extraInfo.attachments,arguments.logEvent.getSeverity());
+			}
+			else {
+				return extraInfo.attachments
+			}
+		}
+		return [];
+	}
+
+	private array function replaceColors(required array attachments, required numeric severity) {
+		var oSev = decodeSeverity(arguments.severity);
+		for(var a in arguments.attachments) {
+			if (StructKeyExists(a,"color")) {
+				a.color = oSev.color;
+			}
+		}
+		return arguments.attachments;
+	}
+
+	private struct function overrideProperties(required any logEvent) {
+		var props = {
+			userToken = getProperty('userToken'),
+			channel = getProperty('channel'),
+			appURI = getProperty('appURI'),
+			postAsUser = getProperty('postAsUser'),
+			useThread = getProperty('useThread'),
+			useSeverity = getProperty('useSeverity')
+		};
+		var extraInfo = arguments.logEvent.getExtraInfo();
+		if (isStruct(extraInfo) && structKeyExists(extraInfo,"overrideProperties")) {
+			if( structKeyExists(extraInfo.overrideProperties,"userToken") )
+				props.userToken = extraInfo.overrideProperties.userToken;
+			if( structKeyExists(extraInfo.overrideProperties,"channel") )
+				props.channel = extraInfo.overrideProperties.channel;
+			if( structKeyExists(extraInfo.overrideProperties,"appURI") )
+				props.appURI = extraInfo.overrideProperties.appURI;
+			if( structKeyExists(extraInfo.overrideProperties,"postAsUser") )
+				props.postAsUser = extraInfo.overrideProperties.postAsUser;
+			if( structKeyExists(extraInfo.overrideProperties,"useThread") )
+				props.useThread = extraInfo.overrideProperties.useThread;
+			if( structKeyExists(extraInfo.overrideProperties,"useSeverity") )
+				props.useSeverity = extraInfo.overrideProperties.useSeverity;
+		}
+		return props;
+	}
+
+	private struct function decodeSeverity(required numeric severity){
+		var oSev = {};
+		switch(arguments.severity){
+			case 0:
+				oSev.severityText = "Fatal";
+				oSev.emoji = ":skull:";
+				oSev.color = "##000000";
+				break;
+			case 1:
+				oSev.severityText = "Error";
+				oSev.emoji = ":bomb:";
+				oSev.color = "##FF0000";
+				break;
+			case 2:
+				oSev.severityText = "Warning";
+				oSev.emoji = ":warning:";
+				oSev.color = "##FF8C00";
+				break;
+			case 3:
+				oSev.severityText = "Info";
+				oSev.emoji = ":bulb:";
+				oSev.color = "##228822";
+				break;
+			default:
+				oSev.severityText = "Debug";
+				oSev.emoji = ":beetle:";
+				oSev.color = "##00BFFF";
+		}
+
+		return oSev;
 	}
 
 }
