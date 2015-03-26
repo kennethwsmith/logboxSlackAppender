@@ -2,8 +2,8 @@
 LogBox Appender to send messages to Slack.
 
 ## Property description
-* userToken - Token of the User for Slack
-* channel - channel name or ID
+* userToken (required) - Token of the User for Slack
+* channel (required) - channel name or ID
 * appURI - URI of slack API
 * postAsUser - whether to post as anonymous bot, or as the user from token
 * useThread - whether to thread the http request
