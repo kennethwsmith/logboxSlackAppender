@@ -1,66 +1,66 @@
 {
-	name: "Slack Appender",
-	slug: "logbox-slack-appender",
-	version: "1.0.0",
-	author: "Ken Smith",
-	shortDescription: "LogBox Slack Appender",
-	location: "",
-	directory: "",
-	createPackageDirectory: true,
-	packageDirectory: "",
-	homepage: "https://github.com/kennethwsmith/logboxSlackAppender",
-	documentation: "https://github.com/kennethwsmith/logboxSlackAppender",
-	repository: {
-		type: "github",
-		url: "https://github.com/kennethwsmith/logboxSlackAppender"
+	"name": "Slack Appender",
+	"slug": "logbox-slack-appender",
+	"version": "1.0.0",
+	"author": "Ken Smith",
+	"shortDescription": "LogBox Slack Appender",
+	"location": "",
+	"directory": "",
+	"createPackageDirectory": true,
+	"packageDirectory": "",
+	"homepage": "https://github.com/kennethwsmith/logboxSlackAppender",
+	"documentation": "https://github.com/kennethwsmith/logboxSlackAppender",
+	"repository": {
+		"type": "github",
+		"url": "https://github.com/kennethwsmith/logboxSlackAppender"
 	},
-	bugs: "",
-	description: "",
-	instructions: "README.md",
-	changelog: "CHANGELOG.md",
-	type: "",
-	keywords: [ ],
-	private: false,
-	engines: [
+	"bugs": "",
+	"description": "",
+	"instructions": "README.md",
+	"changelog": "CHANGELOG.md",
+	"type": "",
+	"keywords": [ ],
+	"private": false,
+	"engines": [
 		{
-			type: "railo",
-			version: ">=4.1.x"
+			"type": "railo",
+			"version": ">=4.1.x"
 		},
 		{
-			type: "lucee",
-			version: ">=4.5.1"
-		}
+			"type": "lucee",
+			"version": ">=4.5.1"
+		},
 		{
-			type: "adobe",
-			version: ">=10.0.0"
+			"type": "adobe",
+			"version": ">=10.0.0"
 		}
 	],
-	defaultEngine: "",
-	defaultPort: 0,
-	projectURL: "https://github.com/kennethwsmith/logboxSlackAppender",
-	license: [
+	"defaultEngine": "",
+	"defaultPort": 0,
+	"projectURL": "https://github.com/kennethwsmith/logboxSlackAppender",
+	"license": [
 		{
-			type: "Apache License, Version 2.0",
-			url: "https://www.apache.org/licenses/LICENSE-2.0.html"
+			"type": "Apache License, Version 2.0",
+			"url": "https://www.apache.org/licenses/LICENSE-2.0.html"
 		}
 	],
-	contributors: [ ],
-	dependencies: { },
-	devDependencies: { },
-	installPaths: { },
-	ignore: [ ],
-	testbox: {
-		runner: [ ],
-		labels: [ ],
-		reporter: "",
-		reporterResults: "",
-		bundles: [ ],
-		directory: { },
-		watchers: [ ],
-		notify: {
-			emails: [ ],
-			growl: "",
-			url: ""
+	"contributors": [ ],
+	"dependencies": { },
+	"devDependencies": { },
+	"installPaths": { },
+	"ignore": [ ],
+	"testbox": {
+		"runner": [ ],
+		"labels": [ ],
+		"reporter": "",
+		"reporterResults": "",
+		"bundles": [ ],
+		"directory": { },
+		"watchers": [ ],
+		"notify": {
+			"emails": [ ],
+			"growl": "",
+			"url": ""
 		}
 	}
 }
